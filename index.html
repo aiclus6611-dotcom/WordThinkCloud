@@ -10,13 +10,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
 
     <style>
-        body { font-family: "微軟正黑體", "Microsoft JhengHei", sans-serif; background-color: #f8fafc; margin: 0; padding: 0; color: #1e293b; height: 100vh; overflow: hidden; }
+        body { font-family: "微軟正黑體", "Microsoft JhengHei", sans-serif; background-color: #f8fafc; margin: 0; padding: 0; color: #1e293b; }
         
         /* === 修正學員端無法滾動的關鍵 === */
-        #app { height: 100vh; width: 100%; overflow: hidden; }
+        #app { width: 100%; }
         
         /* === 管理後台專用佈局 === */
-        .admin-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; overflow-y: auto; height: 100%; box-sizing: border-box; }
+        .admin-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; box-sizing: border-box; }
         .admin-header { text-align: center; margin-bottom: 30px; color: #1e293b; font-size: 2.2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 12px; }
         .admin-create-box { background: white; padding: 25px; border-radius: 12px; display: flex; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 30px; align-items: center; flex-wrap: wrap; }
         .admin-create-box input { flex: 1; padding: 14px 18px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; min-width: 250px; outline: none; transition: 0.3s; }
@@ -29,7 +29,7 @@
         .btn-block { display: block; width: 100%; margin: 10px 0; padding: 12px; font-size: 1.05rem; border-radius: 8px; font-weight: bold; text-align: center; }
 
         /* 一般容器 (學員端用) */
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; padding-bottom: 120px; height: 100%; overflow-y: auto; box-sizing: border-box; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; padding-bottom: 120px; box-sizing: border-box; }
         
         /* === 講師端專用佈局 === */
         .teacher-layout { display: flex; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; box-sizing: border-box; background: #f8fafc;}

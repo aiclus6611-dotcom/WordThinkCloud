@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時文字雲互動牆</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
+
+    <style>
+        body { font-family: "微軟正黑體", "Microsoft JhengHei", sans-serif; background-color: #f8fafc; margin: 0; padding: 0; color: #1e293b; height: 100vh; overflow: hidden; }
+        
+        /* === 修正學員端無法滾動的關鍵 === */
+        #app { height: 100vh; width: 100%; overflow: hidden; }
+        
+        /* === 管理後台專用佈局 === */
+        .admin-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; overflow-y: auto; height: 100%; box-sizing: border-box; }
+        .admin-header { text-align: center; margin-bottom: 30px; color: #1e293b; font-size: 2.2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 12px; }
+        .admin-create-box { background: white; padding: 25px; border-radius: 12px; display: flex; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 30px; align-items: center; flex-wrap: wrap; }
+        .admin-create-box input { flex: 1; padding: 14px 18px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; min-width: 250px; outline: none; transition: 0.3s; }
+        .admin-create-box input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
+        .admin-room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; padding-bottom: 50px; }
+        .room-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-top: 6px solid #0ea5e9; position: relative; transition: transform 0.2s, box-shadow 0.2s; }
+        .room-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
+        .room-title { font-size: 1.4rem; font-weight: bold; color: #0f172a; margin-bottom: 10px; }
+        .room-date { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; }
+        .btn-block { display: block; width: 100%; margin: 10px 0; padding: 12px; font-size: 1.05rem; border-radius: 8px; font-weight: bold; text-align: center; }
+
+        /* 一般容器 (學員端用) */
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; padding-bottom: 120px; height: 100%; overflow-y: auto; box-sizing: border-box; }
+        
+        /* === 講師端專用佈局 === */
+        .teacher-layout { display: flex; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; box-sizing: border-box; background: #f8fafc;}
+        
+        /* 標題區塊 */
+        .top-pane { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background: transparent; 
+            overflow: hidden; 
+            position: relative;
+            flex-shrink: 0; 
+        }
+        
+        /* 完全隱形的拖曳分隔線 */
+        .resizer-h { 
+            height: 20px; 
+            margin: -10px 0; 
+            background: transparent; 
+            cursor: row-resize; 
+            z-index: 50; 
+            position: relative;
+        }
+        .is-resizing-h { cursor: row-resize !important; user-select: none; }
+        
+        /* 畫布外部容器 */
+        .bottom-pane { 
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc; 
+            position: relative; 
+            overflow: hidden; 
+            padding: 10px 20px 20px 20px; 
+            box-sizing: border-box;
+            cursor: grab; 
+        }
+        .bottom-pane:active { cursor: grabbing; }
+
+        /* 內容白板卡片容器 */
+        .canvas-wrapper { 
+            flex: 1; 
+            width: 100%; 
+            height: 100%;
+            position: relative; 
+            overflow: hidden; 
+            background: white; 
+            border-radius: 16px; 
+            box-shadow: 0 6px 25px rgba(0,0,0,0.05); 
+        }
+
+        /* 畫布獨立縮放平移圖層 */
+        .canvas-layer {
+            position: absolute; 
+            transform-origin: 0 0; 
+            width: 1200px;
+            height: 800px;
+        }
+        .wordcloud-inner { 
+            width: 100%; 
+            height: 100%; 
+            position: relative;
+        }
+
+        h1 { text-align: center; color: #0f172a; margin-bottom: 15px; font-weight: 800; font-size: 2.2rem; }
+        .subtitle { text-align: center; color: #475569; margin-bottom: 35px; font-size: 1.2rem; }
+
+        /* 通用按鈕樣式 */
+        .btn { border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1rem; margin: 5px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary { background: #0ea5e9; color: white; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-outline { background: white; border: 1px solid #d1d5db; color: #374151; }
+
+        /* 輸入區塊 */
+        .input-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 25px; border: 1px solid #e2e8f0; }
+        .input-row { display: flex; gap: 12px; }
+        .main-input { flex: 1; padding: 14px 18px; font-size: 1.15rem; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; box-sizing: border-box;}
+        .main-input:focus { border-color: #0ea5e9; background: #fdfdfd; }
+        
+        /* 學員端編輯列表 */
+        .q-list { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .q-card { background: white; padding: 22px; border-radius: 12px; box-shadow: 0 3px 12px rgba(0,0,0,0.04); border-left: 6px solid #0ea5e9; display: flex; flex-direction: column; transition: all 0.3s; }
+        .q-text { font-size: 1.3rem; color: #1e293b; font-weight: bold; margin-bottom: 18px; }
+        .actions { display: flex; gap: 12px; justify-content: flex-end; }
+        .action-btn { background: #fff; color: #0284c7; border: 1px solid #bae6fd; padding: 8px 16px; border-radius: 8px; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; font-weight: bold; }
+        .action-btn:hover { background: #f0f9ff; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .action-btn.delete { color: #dc2626; border-color: #fecaca; }
+        .action-btn.delete:hover { background: #fef2f2; }
+        
+        /* === 終極修復：文字標籤底色區塊核心樣式 === */
+        .word-tag {
+            font-family: "微軟正黑體", "Microsoft JhengHei", sans-serif;
+            font-weight: 800 !important; 
+            
+            /* 強制解除套件寫死的寬高，依據內容與隱形填充空白完全包覆 */
+            width: max-content !important;
+            height: auto !important;
+            
+            /* 完美的上下微留白，左右完全交給 \u00A0 進行完美碰撞緩衝 */
+            padding: 0.15em 0 !important; 
+            border-radius: 999px !important; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+            
+            transition: transform 0.2s;
+            cursor: default;
+            user-select: none;
+            
+            display: inline-block !important;
+            text-align: center;
+            line-height: 1.2 !important;
+            white-space: pre !important; 
+            box-sizing: border-box !important;
+        }
+        .word-tag:hover { transform: scale(1.1) !important; z-index: 999 !important; box-shadow: 0 6px 15px rgba(0,0,0,0.1) !important; }
+
+        /* 柔和高對比淡色系配置 */
+        .tag-blue { background-color: #E1F5FE !important; color: #0277BD !important; border: 1px solid #B3E5FC; }
+        .tag-green { background-color: #E8F5E9 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9; }
+        .tag-grey { background-color: #F1F5F9 !important; color: #334155 !important; border: 1px solid #E2E8F0; }
+        .tag-teal { background-color: #E0F2F1 !important; color: #00695C !important; border: 1px solid #B2DFDB; }
+        .tag-purple { background-color: #F3E5F5 !important; color: #6A1B9A !important; border: 1px solid #E1BEE7; }
+
+        /* 講師端畫布大標題 */
+        .course-title-display { text-align: center; font-weight: 900; color: #0f172a; letter-spacing: 2px; z-index: 10; transition: font-size 0.2s ease-out; margin: 0; padding: 0 20px; }
+
+        /* --- 講師底部控制台 --- */
+        .bottom-control-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; color: white; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); z-index: 1000; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); }
+        .bottom-toggle-btn { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #0f172a; color: white; width: 60px; height: 30px; border-radius: 10px 10px 0 0; text-align: center; line-height: 30px; cursor: pointer; font-size: 0.8rem; box-shadow: 0 -3px 8px rgba(0,0,0,0.1); }
+        .control-content { padding: 15px 30px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 15px; }
+        .bottom-control-bar.hidden { transform: translateY(100%); }
+        .bottom-control-bar.hidden .bottom-toggle-btn { top: -30px; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .control-label { color: #94a3b8; font-size: 0.95rem; }
+        .ctrl-input { padding: 8px 12px; border-radius: 6px; border: 1px solid #334155; font-size: 0.95rem; width: 140px; background: #1e293b; color: white;}
+        
+        input[type=range] { -webkit-appearance: none; width: 100px; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #0ea5e9; cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px; }
+
+        .loading-mask { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(248,250,252,0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; font-size: 1.5rem; color: #475569; }
+    </style>
+</head>
+<body :class="{ 'is-resizing-h': isDraggingH }">
+    <div id="app">
+        <div v-if="isLoading" class="loading-mask"><div>☁️ 資料載入中...</div></div>
+
+        <div v-if="viewMode === 'admin'" class="admin-container">
+            <div class="admin-header">
+                <span style="font-size: 2.8rem; color:#0ea5e9;">☁️</span> 文字雲管理後台
+            </div>
+
+            <div class="admin-create-box">
+                <input type="text" v-model="newRoomName" placeholder="輸入新課程或主題的名稱..." @keydown.enter="createRoom">
+                <button class="btn btn-success" @click="createRoom" style="font-size: 1.1rem; padding: 14px 28px;">＋ 建立新主題</button>
+            </div>
+            
+            <div class="admin-room-grid">
+                <div v-for="room in rooms" :key="room.id" class="room-card">
+                    <div class="room-title">{{ room.name }}</div>
+                    <div class="room-date">建立於: {{ formatDate(room.createdAt) }}</div>
+                    <div class="room-actions">
+                        <button class="btn btn-primary btn-block" @click="openTeacherView(room.id)">👨‍🏫 開啟講師端畫布</button>
+                        <button class="btn btn-warning btn-block" @click="copyStudentLink(room.id)" style="background-color:#f59e0b; color:white;">🔗 複製學員連結</button>
+                        <button class="btn btn-danger btn-block" @click="deleteRoom(room.id)">🗑️ 刪除主題</button>
+                    </div>
+                </div>
+                <div v-if="rooms.length === 0" style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 50px; background: white; border-radius: 12px; border: 2px dashed #e2e8f0;">
+                    目前尚無任何主題，請於上方輸入名稱建立。
+                </div>
+            </div>
+        </div>
+
+        <div v-if="viewMode === 'student'" class="container">
+            <h1>{{ settings.mainTitle || '文字雲共創區' }}</h1>
+            <div class="subtitle">{{ settings.subTitle || '輸入關鍵字，與大家共同生成文字雲' }}</div>
+            
+            <div class="input-card">
+                <div class="input-row">
+                    <input type="text" class="main-input" v-model="newWordText" :placeholder="settings.placeholderText || '請輸入單一詞彙或短句...'" @keydown.enter="submitWord" maxlength="20">
+                    <button class="btn btn-primary" @click="submitWord" :disabled="!newWordText.trim()" style="padding: 14px 28px; font-size:1.1rem; background:#0ea5e9;">發送</button>
+                </div>
+            </div>
+
+            <div v-if="myWords.length > 0">
+                <h3 style="color: #475569; font-size: 1.15rem; margin-top: 35px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px;">你送出的詞彙 (可隨時修正)：</h3>
+                <div class="q-list">
+                    <transition-group name="list">
+                        <div v-for="w in myWords" :key="w.id" class="q-card">
+                            <div v-if="editingId !== w.id">
+                                <div class="q-text">{{ w.text }}</div>
+                                <div class="actions">
+                                    <button class="action-btn" @click="startEdit(w)">✏️ 編輯</button>
+                                    <button class="action-btn delete" @click="deleteWord(w.id)">🗑️ 刪除</button>
+                                </div>
+                            </div>
+                            <div v-else>
+                                <input type="text" v-model="editingText" class="main-input" style="width: 100%; box-sizing:border-box; margin-bottom: 15px;" @keydown.enter="saveEdit(w.id)">
+                                <div class="actions">
+                                    <button class="btn btn-primary" @click="saveEdit(w.id)" style="background:#0ea5e9;">儲存修改</button>
+                                    <button class="btn btn-outline" @click="cancelEdit">取消</button>
+                                </div>
+                            </div>
+                        </div>
+                    </transition-group>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="viewMode === 'teacher'" class="teacher-layout">
+            
+            <div class="top-pane" :style="{ height: topPaneHeight + 'px' }">
+                <div v-if="settings.courseTitle" class="course-title-display" :style="{ fontSize: (settings.titleSize || 2.5) + 'rem' }">
+                    {{ settings.courseTitle }}
+                </div>
+            </div>
+
+            <div class="resizer-h" :class="{ 'active': isDraggingH }" @mousedown="startDragH" title="上下拖曳以調整標題空間"></div>
+            
+            <div class="bottom-pane">
+                <div class="canvas-wrapper" ref="viewport" @mousedown="startPan" @wheel.prevent="handleZoom">
+                    <div class="canvas-layer" :style="canvasStyle">
+                        <div class="wordcloud-inner" ref="wordCloudInner">
+                            </div>
+                    </div>
+
+                    <div v-if="words.length === 0" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #94a3b8; font-size: 1.6rem; text-align: center; background:rgba(255,255,255,0.8); padding: 20px; border-radius:10px; pointer-events: none;">
+                        ☁️ 等待學員輸入...<br><span style="font-size: 1.1rem; margin-top:10px; display:inline-block;">(文字雲將在此生成)</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div v-if="viewMode === 'teacher'" class="bottom-control-bar" :class="{ 'hidden': !showControls }" @mousedown.stop>
+            <div class="bottom-toggle-btn" @click="showControls = !showControls">{{ showControls ? '▼ 隱藏' : '▲ 設定' }}</div>
+            <div class="control-content">
+                <div class="control-group">
+                    <span class="control-label">畫布標題：</span>
+                    <input type="text" v-model="settings.courseTitle" placeholder="如: 課後心得" class="ctrl-input" @change="saveSettings">
+                </div>
+                <div class="control-group">
+                    <span class="control-label" style="margin-left: 5px;">標題大小：</span>
+                    <input type="range" v-model.number="settings.titleSize" min="1.0" max="5.0" step="0.1" @input="saveSettings">
+                </div>
+
+                <div class="control-group" style="margin-left: 15px;">
+                    <span class="control-label">主標題：</span>
+                    <input type="text" v-model="settings.mainTitle" placeholder="共創區" class="ctrl-input" @change="saveSettings">
+                </div>
+                <div class="control-group">
+                    <span class="control-label">副標題：</span>
+                    <input type="text" v-model="settings.subTitle" placeholder="關鍵字..." class="ctrl-input" @change="saveSettings">
+                </div>
+                
+                <div class="control-group" style="margin-left: auto;">
+                    <button class="btn btn-outline" style="color: white; border-color: #334155; background:transparent;" @click="resetView">🔍 置中/還原</button>
+                    <button class="btn btn-outline" style="color: white; border-color: #334155; background:transparent;" @click="renderWordCloud">🔄 強制重繪</button>
+                    <button class="btn btn-danger" @click="clearAllData">🗑️ 清空資料</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDUPGhkiJgxeYDYHqEaXCYvKh2vdTGqypw", 
+            authDomain: "class-discussion-01.firebaseapp.com", 
+            databaseURL: "https://class-discussion-01-default-rtdb.firebaseio.com", 
+            projectId: "class-discussion-01", 
+            storageBucket: "class-discussion-01.firebasestorage.app", 
+            messagingSenderId: "724687365020", 
+            appId: "1:724687365020:web:380b5d85872dc2d9b85e59", 
+            measurementId: "G-XYN5JV48T7" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        createApp({
+            data() {
+                return {
+                    viewMode: '',
+                    roomId: '',
+                    rooms: [],
+                    newRoomName: '',
+
+                    isLoading: true, 
+                    showControls: true, 
+                    words: [], 
+                    newWordText: '', 
+                    myAuthorId: '', 
+                    
+                    editingId: null,
+                    editingText: '',
+
+                    settings: {
+                        mainTitle: '',
+                        subTitle: '',
+                        placeholderText: '',
+                        courseTitle: '',
+                        titleSize: 2.5
+                    },
+
+                    topPaneHeight: 120,
+                    isDraggingH: false,
+
+                    canvasW: 1200, 
+                    canvasH: 800,  
+                    scale: 1, 
+                    panning: false, 
+                    pointX: 0, 
+                    pointY: 0, 
+                    startX: 0, 
+                    startY: 0,
+
+                    renderTimeout: null 
+                }
+            },
+            computed: {
+                myWords() {
+                    return this.words.filter(w => w.authorId === this.myAuthorId).sort((a, b) => b.timestamp - a.timestamp);
+                },
+
+                canvasStyle() {
+                    return {
+                        width: this.canvasW + 'px',
+                        height: this.canvasH + 'px',
+                        transform: `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`
+                    }
+                },
+                
+                cloudDataList() {
+                    const exactPhraseCounts = {};
+                    const biGramFreq = {};
+
+                    // 1. 收集「學員原本打的完整字串」，並統計全場所有的「連續兩字組合(Bi-gram)」頻率
+                    this.words.forEach(w => {
+                        const text = w.text.trim().toUpperCase(); 
+                        if (!text) return;
+
+                        // 記錄學員輸入的「完整字串」
+                        exactPhraseCounts[text] = (exactPhraseCounts[text] || 0) + 1;
+
+                        // 拆解並統計 Bi-gram 當作全場重疊字典
+                        if (text.length === 1) {
+                            biGramFreq[text] = (biGramFreq[text] || 0) + 1;
+                        } else {
+                            for (let i = 0; i < text.length - 1; i++) {
+                                const token = text.substring(i, i + 2);
+                                biGramFreq[token] = (biGramFreq[token] || 0) + 1;
+                            }
+                        }
+                    });
+                    
+                    const phraseScores = {};
+
+                    // 2. 計算每個「完整字串」的最終大小分數
+                    Object.keys(exactPhraseCounts).forEach(text => {
+                        let baseScore = exactPhraseCounts[text] * 10; 
+                        let maxOverlapBonus = 0; // === 【修正核心】改取最大重疊次數 ===
+
+                        if (text.length === 1) {
+                            maxOverlapBonus = biGramFreq[text] - exactPhraseCounts[text];
+                        } else {
+                            for (let i = 0; i < text.length - 1; i++) {
+                                const token = text.substring(i, i + 2);
+                                const overlapCount = biGramFreq[token] - exactPhraseCounts[text];
+                                // 如果這個雙字詞的重疊次數大於目前的最高紀錄，就更新最高紀錄
+                                if (overlapCount > maxOverlapBonus) {
+                                    maxOverlapBonus = overlapCount;
+                                }
+                            }
+                        }
+                        
+                        // 最終分數 = 基本分 + (最大單一特徵重疊次數 * 8)
+                        // 這樣長句子就不會因為無腦累加而膨脹，只有真正命中高頻關鍵詞的句子才會變大
+                        phraseScores[text] = baseScore + (maxOverlapBonus * 8);
+                    });
+
+                    // 3. 換算成文字雲需要的大小權重
+                    const scoresArray = Object.values(phraseScores);
+                    const maxScore = scoresArray.length > 0 ? Math.max(...scoresArray) : 1;
+                    const minScore = scoresArray.length > 0 ? Math.min(...scoresArray) : 1;
+
+                    const sortedEntries = Object.entries(phraseScores).sort((a, b) => b[1] - a[1]);
+
+                    return sortedEntries.map(([text, score]) => {
+                        let finalWeight;
+
+                        if (maxScore === minScore || maxScore === 0) {
+                            let hash = 0;
+                            for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash);
+                            finalWeight = 26 + (Math.abs(hash) % 10);
+                        } else {
+                            const ratio = (score - minScore) / (maxScore - minScore);
+                            finalWeight = 22 + (Math.pow(ratio, 1.2) * 58); 
+                        }
+                        
+                        return ["\u00A0\u00A0" + text + "\u00A0\u00A0", finalWeight]; 
+                    });
+                }
+            },
+            watch: {
+                words: {
+                    deep: true,
+                    handler() {
+                        if (this.viewMode === 'teacher') {
+                            clearTimeout(this.renderTimeout);
+                            this.renderTimeout = setTimeout(() => {
+                                this.renderWordCloud();
+                            }, 800);
+                        }
+                    }
+                }
+            },
+            mounted() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const room = urlParams.get('room');
+                const role = urlParams.get('role');
+
+                if (!room) {
+                    this.viewMode = 'admin';
+                    db.ref('wc_system_rooms').on('value', snapshot => {
+                        const val = snapshot.val();
+                        this.rooms = val ? Object.keys(val).map(key => ({ id: key, ...val[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+                        this.isLoading = false;
+                    });
+                } else {
+                    this.roomId = room;
+                    if (role === 'teacher') {
+                        this.viewMode = 'teacher';
+                        window.addEventListener('resize', this.resetView);
+                        setTimeout(() => {
+                            this.resetView();
+                            this.renderWordCloud();
+                        }, 500);
+                    } else {
+                        this.viewMode = 'student';
+                    }
+
+                    let storedId = localStorage.getItem('wc_author_id');
+                    if (!storedId) { 
+                        storedId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000); 
+                        localStorage.setItem('wc_author_id', storedId); 
+                    }
+                    this.myAuthorId = storedId;
+
+                    db.ref(`wc_rooms_data/${this.roomId}/words`).on('value', snapshot => {
+                        const val = snapshot.val(); 
+                        this.isLoading = false;
+                        this.words = val ? Object.keys(val).map(key => ({ id: key, ...val[key] })) : [];
+                    });
+                    
+                    db.ref(`wc_rooms_data/${this.roomId}/settings`).on('value', snapshot => {
+                        const s = snapshot.val() || {};
+                        this.settings.mainTitle = s.mainTitle || '';
+                        this.settings.subTitle = s.subTitle || '';
+                        this.settings.placeholderText = s.placeholderText || '';
+                        this.settings.courseTitle = s.courseTitle || '';
+                        if (s.titleSize !== undefined) this.settings.titleSize = s.titleSize; 
+                    });
+                }
+            },
+            beforeUnmount() {
+                if (this.viewMode === 'teacher') {
+                    window.removeEventListener('resize', this.resetView);
+                }
+            },
+            methods: {
+                createRoom() {
+                    const name = this.newRoomName.trim();
+                    if (!name) { alert('請輸入主題名稱'); return; }
+                    db.ref('wc_system_rooms').push({ name: name, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(() => { this.newRoomName = ''; });
+                },
+                deleteRoom(id) {
+                    if (confirm('確定要刪除這個主題嗎？此操作無法恢復。')) {
+                        db.ref(`wc_system_rooms/${id}`).remove();
+                        db.ref(`wc_rooms_data/${id}`).remove(); 
+                    }
+                },
+                openTeacherView(id) { window.open(`?room=${id}&role=teacher`, '_blank'); },
+                copyStudentLink(id) {
+                    navigator.clipboard.writeText(window.location.origin + window.location.pathname + `?room=${id}`).then(() => alert('✅ 已成功複製學員連結！')).catch(() => alert('複製失敗'));
+                },
+                formatDate(ts) {
+                    if (!ts) return ''; const d = new Date(ts);
+                    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
+                },
+
+                saveSettings() { db.ref(`wc_rooms_data/${this.roomId}/settings`).update(this.settings); },
+                submitWord() {
+                    const text = this.newWordText.trim(); if (!text) return;
+                    db.ref(`wc_rooms_data/${this.roomId}/words`).push({ 
+                        text: text, 
+                        timestamp: firebase.database.ServerValue.TIMESTAMP,
+                        authorId: this.myAuthorId 
+                    }).then(() => { this.newWordText = ''; });
+                },
+                startEdit(w) { this.editingId = w.id; this.editingText = w.text; },
+                cancelEdit() { this.editingId = null; this.editingText = ''; },
+                saveEdit(id) {
+                    if (!this.editingText.trim()) return;
+                    db.ref(`wc_rooms_data/${this.roomId}/words/${id}`).update({ text: this.editingText }).then(() => { this.editingId = null; });
+                },
+                deleteWord(id) {
+                    if (confirm('確定要刪除這個詞彙嗎？')) { db.ref(`wc_rooms_data/${this.roomId}/words/${id}`).remove(); }
+                },
+                clearAllData() { 
+                    if (confirm('警告：這將會清空畫布上的所有字詞！確定執行嗎？')) { 
+                        db.ref(`wc_rooms_data/${this.roomId}/words`).remove(); 
+                        if (this.$refs.wordCloudInner) {
+                            this.$refs.wordCloudInner.innerHTML = '';
+                        }
+                    } 
+                },
+
+                /* --- 上下拖曳改變版面大小邏輯 --- */
+                startDragH() {
+                    this.isDraggingH = true;
+                    document.body.style.userSelect = 'none';
+                    document.body.style.cursor = 'row-resize';
+                    window.addEventListener('mousemove', this.doDragH);
+                    window.addEventListener('mouseup', this.stopDragH);
+                },
+                doDragH(e) {
+                    if (this.isDraggingH) {
+                        let newHeight = e.clientY;
+                        if (newHeight > 30 && newHeight < window.innerHeight - 150) {
+                            this.topPaneHeight = newHeight;
+                            this.resetView(); 
+                        }
+                    }
+                },
+                stopDragH() {
+                    this.isDraggingH = false;
+                    document.body.style.userSelect = '';
+                    document.body.style.cursor = '';
+                    window.removeEventListener('mousemove', this.doDragH);
+                    window.removeEventListener('mouseup', this.stopDragH);
+                    
+                    setTimeout(() => { this.resetView(); }, 50);
+                },
+
+                /* --- 畫布滑鼠平移拖曳邏輯 --- */
+                startPan(e) {
+                    if (this.viewMode !== 'teacher') return;
+                    this.panning = true;
+                    this.startX = e.clientX - this.pointX; 
+                    this.startY = e.clientY - this.pointY;
+                    window.addEventListener('mousemove', this.onPan); 
+                    window.addEventListener('mouseup', this.stopPan);
+                },
+                onPan(e) {
+                    if (!this.panning) return;
+                    e.preventDefault();
+                    this.pointX = e.clientX - this.startX; 
+                    this.pointY = e.clientY - this.startY;
+                },
+                stopPan() {
+                    this.panning = false;
+                    window.removeEventListener('mousemove', this.onPan); 
+                    window.removeEventListener('mouseup', this.stopPan);
+                },
+
+                /* --- 畫布滾輪縮放邏輯 --- */
+                handleZoom(e) {
+                    if (this.viewMode !== 'teacher') return;
+                    const zoomSensitivity = 0.001;
+                    const delta = -e.deltaY * zoomSensitivity;
+                    const newScale = Math.min(Math.max(0.1, this.scale + delta), 5); 
+                    const ratio = 1 - newScale / this.scale;
+                    
+                    this.pointX += (e.clientX - this.pointX) * ratio;
+                    this.pointY += (e.clientY - this.pointY) * ratio;
+                    this.scale = newScale;
+                },
+
+                /* --- 重置視圖 (自動定位置中) --- */
+                resetView() {
+                    if (this.viewMode !== 'teacher' || !this.$refs.viewport) return;
+                    const wrapper = this.$refs.viewport;
+                    
+                    const clientW = wrapper.clientWidth || 1200;
+                    const clientH = wrapper.clientHeight || 800;
+                    
+                    const scaleW = clientW / this.canvasW;
+                    const scaleH = clientH / this.canvasH;
+                    this.scale = Math.min(scaleW, scaleH) * 0.95; 
+                    
+                    this.pointX = (clientW - this.canvasW * this.scale) / 2;
+                    this.pointY = (clientH - this.canvasH * this.scale) / 2;
+                },
+
+                /* --- 文字雲生成與排版渲染 --- */
+                renderWordCloud() {
+                    if (this.viewMode !== 'teacher' || !this.$refs.wordCloudInner) return;
+                    const list = this.cloudDataList;
+                    
+                    const inner = this.$refs.wordCloudInner;
+                    inner.innerHTML = ''; 
+
+                    if (list.length === 0) return; 
+
+                    WordCloud(inner, {
+                        list: list,
+                        fontFamily: '"微軟正黑體", "Microsoft JhengHei", sans-serif',
+                        color: 'transparent', 
+                        backgroundColor: 'transparent',
+                        rotateRatio: 0, 
+                        
+                        /* 設定安全的網格密度，保證上下標籤絕對不會互相覆蓋 */
+                        gridSize: Math.round(22 * (1200 / 1024)), 
+                        
+                        origin: [600, 400], 
+                        weightFactor: function (size) { return size; }, 
+                        drawOutOfBound: false, 
+                        shrinkToFit: true,     
+                        ellipticity: 0.8, 
+                        shape: 'square',
+                        
+                        classes: function(word) {
+                            // 去除輔助排版用的隱形空白再計算隨機 hash 顏色，確保同字同色
+                            const cleanWord = word.replace(/\u00A0/g, '').trim();
+                            let hash = 0;
+                            for (let i = 0; i < cleanWord.length; i++) hash = cleanWord.charCodeAt(i) + ((hash << 5) - hash);
+                            
+                            const colors = ['tag-blue', 'tag-green', 'tag-grey', 'tag-teal', 'tag-purple'];
+                            return 'word-tag ' + colors[Math.abs(hash) % colors.length];
+                        }
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

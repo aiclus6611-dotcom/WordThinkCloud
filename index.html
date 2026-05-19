@@ -15,6 +15,13 @@
         /* === 修正學員端無法滾動的關鍵 === */
         #app { width: 100%; }
         
+        /* === 管理後台登入畫面樣式 === */
+        .login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f8fafc; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 400px; box-sizing: border-box; border-top: 6px solid #0ea5e9; }
+        .login-box h2 { color: #0f172a; margin-bottom: 25px; margin-top: 0; font-size: 1.8rem; }
+        .login-box input { width: 100%; padding: 14px; font-size: 1.1rem; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        .login-box input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
+
         /* === 管理後台專用佈局 === */
         .admin-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; box-sizing: border-box; }
         .admin-header { text-align: center; margin-bottom: 30px; color: #1e293b; font-size: 2.2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 12px; }
@@ -180,7 +187,15 @@
     <div id="app">
         <div v-if="isLoading" class="loading-mask"><div>☁️ 資料載入中...</div></div>
 
-        <div v-if="viewMode === 'admin'" class="admin-container">
+        <div v-if="viewMode === 'admin' && !isAdminAuthenticated" class="login-container">
+            <div class="login-box">
+                <h2>🔒 後台管理登入</h2>
+                <input type="password" v-model="adminPasswordInput" placeholder="請輸入管理密碼..." @keydown.enter="loginAdmin">
+                <button class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.1rem;" @click="loginAdmin">登入</button>
+            </div>
+        </div>
+
+        <div v-if="viewMode === 'admin' && isAdminAuthenticated" class="admin-container">
             <div class="admin-header">
                 <span style="font-size: 2.8rem; color:#0ea5e9;">☁️</span> 文字雲管理後台
             </div>
@@ -322,6 +337,8 @@
             data() {
                 return {
                     viewMode: '',
+                    isAdminAuthenticated: false,
+                    adminPasswordInput: '',
                     roomId: '',
                     rooms: [],
                     newRoomName: '',
@@ -462,11 +479,12 @@
 
                 if (!room) {
                     this.viewMode = 'admin';
-                    db.ref('wc_system_rooms').on('value', snapshot => {
-                        const val = snapshot.val();
-                        this.rooms = val ? Object.keys(val).map(key => ({ id: key, ...val[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+                    if (localStorage.getItem('wc_admin_auth') === '20150117') {
+                        this.isAdminAuthenticated = true;
+                        this.loadAdminRooms();
+                    } else {
                         this.isLoading = false;
-                    });
+                    }
                 } else {
                     this.roomId = room;
                     if (role === 'teacher') {
@@ -509,6 +527,24 @@
                 }
             },
             methods: {
+                loginAdmin() {
+                    if (this.adminPasswordInput === '20150117') {
+                        this.isAdminAuthenticated = true;
+                        localStorage.setItem('wc_admin_auth', '20150117');
+                        this.loadAdminRooms();
+                    } else {
+                        alert('密碼錯誤，請重新輸入！');
+                        this.adminPasswordInput = '';
+                    }
+                },
+                loadAdminRooms() {
+                    this.isLoading = true;
+                    db.ref('wc_system_rooms').on('value', snapshot => {
+                        const val = snapshot.val();
+                        this.rooms = val ? Object.keys(val).map(key => ({ id: key, ...val[key] })).sort((a, b) => b.createdAt - a.createdAt) : [];
+                        this.isLoading = false;
+                    });
+                },
                 createRoom() {
                     const name = this.newRoomName.trim();
                     if (!name) { alert('請輸入主題名稱'); return; }

@@ -396,7 +396,7 @@
                         let finalWeight;
                         
                         if (maxScore === minScore) {
-                            finalWeight = 36; 
+                            finalWeight = minFontSize + ((maxFontSize - minFontSize) * 0.5); 
                         } else {
                             const ratio = (score - minScore) / (maxScore - minScore);
                             finalWeight = minFontSize + (ratio * (maxFontSize - minFontSize)); 

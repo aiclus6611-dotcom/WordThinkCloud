@@ -23,12 +23,14 @@
         .login-box input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
 
         /* === 管理後台專用佈局 === */
-        .admin-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; box-sizing: border-box; }
+        /* 將最大寬度稍微加寬，確保三欄有足夠空間 */
+        .admin-container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; box-sizing: border-box; }
         .admin-header { text-align: center; margin-bottom: 30px; color: #1e293b; font-size: 2.2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 12px; }
         .admin-create-box { background: white; padding: 25px; border-radius: 12px; display: flex; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 30px; align-items: center; flex-wrap: wrap; }
         .admin-create-box input { flex: 1; padding: 14px 18px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; min-width: 250px; outline: none; transition: 0.3s; }
         .admin-create-box input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
-        .admin-room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; padding-bottom: 50px; }
+        /* 將 minmax 降到 280px，即可實現一行三個卡片 */
+        .admin-room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding-bottom: 50px; }
         .room-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-top: 6px solid #0ea5e9; position: relative; transition: transform 0.2s, box-shadow 0.2s; }
         .room-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
         .room-title { font-size: 1.4rem; font-weight: bold; color: #0f172a; margin-bottom: 10px; line-height: 1.3; }
@@ -479,12 +481,8 @@
 
                 if (!room) {
                     this.viewMode = 'admin';
-                    if (localStorage.getItem('wc_admin_auth') === '20150117') {
-                        this.isAdminAuthenticated = true;
-                        this.loadAdminRooms();
-                    } else {
-                        this.isLoading = false;
-                    }
+                    // 移除 localStorage 判斷，每次都需要輸入密碼
+                    this.isLoading = false;
                 } else {
                     this.roomId = room;
                     if (role === 'teacher') {
@@ -530,7 +528,7 @@
                 loginAdmin() {
                     if (this.adminPasswordInput === '20150117') {
                         this.isAdminAuthenticated = true;
-                        localStorage.setItem('wc_admin_auth', '20150117');
+                        // 移除儲存 localStorage 密碼的行為，保護後台安全
                         this.loadAdminRooms();
                     } else {
                         alert('密碼錯誤，請重新輸入！');

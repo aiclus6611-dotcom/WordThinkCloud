@@ -23,19 +23,16 @@
         .login-box input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
 
         /* === 管理後台專用佈局 === */
-        /* 將最大寬度稍微加寬，確保三欄有足夠空間 */
         .admin-container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; box-sizing: border-box; }
         .admin-header { text-align: center; margin-bottom: 30px; color: #1e293b; font-size: 2.2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; gap: 12px; }
         .admin-create-box { background: white; padding: 25px; border-radius: 12px; display: flex; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 30px; align-items: center; flex-wrap: wrap; }
         .admin-create-box input { flex: 1; padding: 14px 18px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1.1rem; min-width: 250px; outline: none; transition: 0.3s; }
         .admin-create-box input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); }
-        /* 將 minmax 降到 280px，即可實現一行三個卡片 */
         .admin-room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding-bottom: 50px; }
         .room-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-top: 6px solid #0ea5e9; position: relative; transition: transform 0.2s, box-shadow 0.2s; }
         .room-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.07); }
         .room-title { font-size: 1.4rem; font-weight: bold; color: #0f172a; margin-bottom: 10px; line-height: 1.3; }
         .room-date { color: #64748b; font-size: 0.95rem; margin-bottom: 20px; }
-        /* 微調按鈕間距與大小以容納更多選項 */
         .btn-block { display: block; width: 100%; margin: 8px 0; padding: 10px; font-size: 1rem; border-radius: 8px; font-weight: bold; text-align: center; box-sizing: border-box; }
 
         /* 一般容器 (學員端用) */
@@ -45,65 +42,22 @@
         .teacher-layout { display: flex; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; box-sizing: border-box; background: #f8fafc;}
         
         /* 標題區塊 */
-        .top-pane { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            background: transparent; 
-            overflow: hidden; 
-            position: relative;
-            flex-shrink: 0; 
-        }
+        .top-pane { display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; position: relative; flex-shrink: 0; }
         
         /* 完全隱形的拖曳分隔線 */
-        .resizer-h { 
-            height: 20px; 
-            margin: -10px 0; 
-            background: transparent; 
-            cursor: row-resize; 
-            z-index: 50; 
-            position: relative;
-        }
+        .resizer-h { height: 20px; margin: -10px 0; background: transparent; cursor: row-resize; z-index: 50; position: relative; }
         .is-resizing-h { cursor: row-resize !important; user-select: none; }
         
         /* 畫布外部容器 */
-        .bottom-pane { 
-            flex: 1; 
-            display: flex;
-            flex-direction: column;
-            background: #f8fafc; 
-            position: relative; 
-            overflow: hidden; 
-            padding: 10px 20px 20px 20px; 
-            box-sizing: border-box;
-            cursor: grab; 
-        }
+        .bottom-pane { flex: 1; display: flex; flex-direction: column; background: #f8fafc; position: relative; overflow: hidden; padding: 10px 20px 20px 20px; box-sizing: border-box; cursor: grab; }
         .bottom-pane:active { cursor: grabbing; }
 
         /* 內容白板卡片容器 */
-        .canvas-wrapper { 
-            flex: 1; 
-            width: 100%; 
-            height: 100%;
-            position: relative; 
-            overflow: hidden; 
-            background: white; 
-            border-radius: 16px; 
-            box-shadow: 0 6px 25px rgba(0,0,0,0.05); 
-        }
+        .canvas-wrapper { flex: 1; width: 100%; height: 100%; position: relative; overflow: hidden; background: white; border-radius: 16px; box-shadow: 0 6px 25px rgba(0,0,0,0.05); }
 
         /* 畫布獨立縮放平移圖層 */
-        .canvas-layer {
-            position: absolute; 
-            transform-origin: 0 0; 
-            width: 1200px;
-            height: 800px;
-        }
-        .wordcloud-inner { 
-            width: 100%; 
-            height: 100%; 
-            position: relative;
-        }
+        .canvas-layer { position: absolute; transform-origin: 0 0; width: 1200px; height: 800px; }
+        .wordcloud-inner { width: 100%; height: 100%; position: relative; }
 
         h1 { text-align: center; color: #0f172a; margin-bottom: 15px; font-weight: 800; font-size: 2.2rem; }
         .subtitle { text-align: center; color: #475569; margin-bottom: 35px; font-size: 1.2rem; }
@@ -132,27 +86,27 @@
         .action-btn.delete { color: #dc2626; border-color: #fecaca; }
         .action-btn.delete:hover { background: #fef2f2; }
         
-        /* === 終極修復：文字標籤底色區塊核心樣式 === */
+        /* === 文字標籤核心樣式 === */
         .word-tag {
             font-family: "微軟正黑體", "Microsoft JhengHei", sans-serif;
             font-weight: 800 !important; 
-            
-            /* 強制解除套件寫死的寬高，依據內容與隱形填充空白完全包覆 */
             width: max-content !important;
             height: auto !important;
             
-            /* 完美的上下微留白，左右完全交給 \u00A0 進行完美碰撞緩衝 */
-            padding: 0.15em 0 !important; 
+            /* 【防重疊關鍵微調 1】縮緊上下 padding，讓膠囊框緊貼文字 */
+            padding: 0.05em 0 !important; 
+            
             border-radius: 999px !important; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-            
             transition: transform 0.2s;
             cursor: default;
             user-select: none;
-            
             display: inline-block !important;
             text-align: center;
-            line-height: 1.2 !important;
+            
+            /* 【防重疊關鍵微調 2】縮緊行高，避免透明區塊互相碰撞 */
+            line-height: 1.1 !important; 
+            
             white-space: pre !important; 
             box-sizing: border-box !important;
         }
@@ -278,8 +232,7 @@
             <div class="bottom-pane">
                 <div class="canvas-wrapper" ref="viewport" @mousedown="startPan" @wheel.prevent="handleZoom">
                     <div class="canvas-layer" :style="canvasStyle">
-                        <div class="wordcloud-inner" ref="wordCloudInner">
-                            </div>
+                        <div class="wordcloud-inner" ref="wordCloudInner"></div>
                     </div>
 
                     <div v-if="words.length === 0" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #94a3b8; font-size: 1.6rem; text-align: center; background:rgba(255,255,255,0.8); padding: 20px; border-radius:10px; pointer-events: none;">
@@ -344,16 +297,13 @@
                     roomId: '',
                     rooms: [],
                     newRoomName: '',
-
                     isLoading: true, 
                     showControls: true, 
                     words: [], 
                     newWordText: '', 
                     myAuthorId: '', 
-                    
                     editingId: null,
                     editingText: '',
-
                     settings: {
                         mainTitle: '',
                         subTitle: '',
@@ -361,10 +311,8 @@
                         courseTitle: '',
                         titleSize: 2.5
                     },
-
                     topPaneHeight: 120,
                     isDraggingH: false,
-
                     canvasW: 1200, 
                     canvasH: 800,  
                     scale: 1, 
@@ -373,7 +321,6 @@
                     pointY: 0, 
                     startX: 0, 
                     startY: 0,
-
                     renderTimeout: null 
                 }
             },
@@ -381,7 +328,6 @@
                 myWords() {
                     return this.words.filter(w => w.authorId === this.myAuthorId).sort((a, b) => b.timestamp - a.timestamp);
                 },
-
                 canvasStyle() {
                     return {
                         width: this.canvasW + 'px',
@@ -389,72 +335,71 @@
                         transform: `translate(${this.pointX}px, ${this.pointY}px) scale(${this.scale})`
                     }
                 },
-                
                 cloudDataList() {
                     const exactPhraseCounts = {};
                     const biGramFreq = {};
 
-                    // 1. 收集「學員原本打的完整字串」，並統計全場所有的「連續兩字組合(Bi-gram)」頻率
                     this.words.forEach(w => {
                         const text = w.text.trim().toUpperCase(); 
                         if (!text) return;
 
-                        // 記錄學員輸入的「完整字串」
                         exactPhraseCounts[text] = (exactPhraseCounts[text] || 0) + 1;
 
-                        // 拆解並統計 Bi-gram 當作全場重疊字典
+                        const uniqueBiGrams = new Set();
                         if (text.length === 1) {
-                            biGramFreq[text] = (biGramFreq[text] || 0) + 1;
+                            uniqueBiGrams.add(text);
                         } else {
                             for (let i = 0; i < text.length - 1; i++) {
-                                const token = text.substring(i, i + 2);
-                                biGramFreq[token] = (biGramFreq[token] || 0) + 1;
+                                uniqueBiGrams.add(text.substring(i, i + 2));
                             }
                         }
+
+                        uniqueBiGrams.forEach(token => {
+                            biGramFreq[token] = (biGramFreq[token] || 0) + 1;
+                        });
                     });
                     
                     const phraseScores = {};
 
-                    // 2. 計算每個「完整字串」的最終大小分數
                     Object.keys(exactPhraseCounts).forEach(text => {
                         let baseScore = exactPhraseCounts[text] * 10; 
-                        let maxOverlapBonus = 0; // === 【修正核心】改取最大重疊次數 ===
+                        let maxOverlapBonus = 0; 
 
                         if (text.length === 1) {
-                            maxOverlapBonus = biGramFreq[text] - exactPhraseCounts[text];
+                            maxOverlapBonus = (biGramFreq[text] || 0) - exactPhraseCounts[text];
                         } else {
                             for (let i = 0; i < text.length - 1; i++) {
                                 const token = text.substring(i, i + 2);
-                                const overlapCount = biGramFreq[token] - exactPhraseCounts[text];
-                                // 如果這個雙字詞的重疊次數大於目前的最高紀錄，就更新最高紀錄
+                                const overlapCount = (biGramFreq[token] || 0) - exactPhraseCounts[text];
                                 if (overlapCount > maxOverlapBonus) {
                                     maxOverlapBonus = overlapCount;
                                 }
                             }
                         }
-                        
-                        // 最終分數 = 基本分 + (最大單一特徵重疊次數 * 8)
-                        // 這樣長句子就不會因為無腦累加而膨脹，只有真正命中高頻關鍵詞的句子才會變大
-                        phraseScores[text] = baseScore + (maxOverlapBonus * 8);
+                        maxOverlapBonus = Math.max(0, maxOverlapBonus);
+
+                        phraseScores[text] = baseScore + (maxOverlapBonus * 3);
                     });
 
-                    // 3. 換算成文字雲需要的大小權重
                     const scoresArray = Object.values(phraseScores);
-                    const maxScore = scoresArray.length > 0 ? Math.max(...scoresArray) : 1;
-                    const minScore = scoresArray.length > 0 ? Math.min(...scoresArray) : 1;
+                    if (scoresArray.length === 0) return [];
+                    
+                    let maxScore = Math.max(...scoresArray);
+                    let minScore = Math.min(...scoresArray);
+
+                    const minFontSize = 24;
+                    const maxFontSize = minFontSize * 2.7; 
 
                     const sortedEntries = Object.entries(phraseScores).sort((a, b) => b[1] - a[1]);
 
                     return sortedEntries.map(([text, score]) => {
                         let finalWeight;
-
-                        if (maxScore === minScore || maxScore === 0) {
-                            let hash = 0;
-                            for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash);
-                            finalWeight = 26 + (Math.abs(hash) % 10);
+                        
+                        if (maxScore === minScore) {
+                            finalWeight = 36; 
                         } else {
                             const ratio = (score - minScore) / (maxScore - minScore);
-                            finalWeight = 22 + (Math.pow(ratio, 1.2) * 58); 
+                            finalWeight = minFontSize + (ratio * (maxFontSize - minFontSize)); 
                         }
                         
                         return ["\u00A0\u00A0" + text + "\u00A0\u00A0", finalWeight]; 
@@ -481,7 +426,6 @@
 
                 if (!room) {
                     this.viewMode = 'admin';
-                    // 移除 localStorage 判斷，每次都需要輸入密碼
                     this.isLoading = false;
                 } else {
                     this.roomId = room;
@@ -528,7 +472,6 @@
                 loginAdmin() {
                     if (this.adminPasswordInput === '20150117') {
                         this.isAdminAuthenticated = true;
-                        // 移除儲存 localStorage 密碼的行為，保護後台安全
                         this.loadAdminRooms();
                     } else {
                         alert('密碼錯誤，請重新輸入！');
@@ -548,40 +491,26 @@
                     if (!name) { alert('請輸入主題名稱'); return; }
                     db.ref('wc_system_rooms').push({ name: name, createdAt: firebase.database.ServerValue.TIMESTAMP }).then(() => { this.newRoomName = ''; });
                 },
-                
-                // 新增：修改主題名稱
                 renameRoom(room) {
                     const newName = prompt('請輸入新的主題名稱：', room.name);
                     if (newName && newName.trim() !== '' && newName !== room.name) {
                         db.ref(`wc_system_rooms/${room.id}`).update({ name: newName.trim() });
                     }
                 },
-                
-                // 新增：複製主題與設定檔 (不會複製舊資料)
                 duplicateRoom(room) {
                     const newName = prompt('請輸入複製後的主題名稱：', room.name + ' (複製)');
                     if (newName && newName.trim() !== '') {
-                        // 1. 建立新房間
                         const newRoomRef = db.ref('wc_system_rooms').push();
                         const newRoomId = newRoomRef.key;
-                        
-                        newRoomRef.set({
-                            name: newName.trim(),
-                            createdAt: firebase.database.ServerValue.TIMESTAMP
-                        }).then(() => {
-                            // 2. 複製舊的設定檔到新房間
-                            db.ref(`wc_rooms_data/${room.id}/settings`).once('value')
-                                .then(snapshot => {
-                                    const settings = snapshot.val();
-                                    if (settings) {
-                                        db.ref(`wc_rooms_data/${newRoomId}/settings`).set(settings);
-                                    }
-                                    alert('✅ 主題與設定複製成功！');
-                                });
+                        newRoomRef.set({ name: newName.trim(), createdAt: firebase.database.ServerValue.TIMESTAMP }).then(() => {
+                            db.ref(`wc_rooms_data/${room.id}/settings`).once('value').then(snapshot => {
+                                const settings = snapshot.val();
+                                if (settings) db.ref(`wc_rooms_data/${newRoomId}/settings`).set(settings);
+                                alert('✅ 主題與設定複製成功！');
+                            });
                         });
                     }
                 },
-
                 deleteRoom(id) {
                     if (confirm('確定要刪除這個主題嗎？此操作無法恢復。')) {
                         db.ref(`wc_system_rooms/${id}`).remove();
@@ -596,7 +525,6 @@
                     if (!ts) return ''; const d = new Date(ts);
                     return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
                 },
-
                 saveSettings() { db.ref(`wc_rooms_data/${this.roomId}/settings`).update(this.settings); },
                 submitWord() {
                     const text = this.newWordText.trim(); if (!text) return;
@@ -618,13 +546,9 @@
                 clearAllData() { 
                     if (confirm('警告：這將會清空畫布上的所有字詞！確定執行嗎？')) { 
                         db.ref(`wc_rooms_data/${this.roomId}/words`).remove(); 
-                        if (this.$refs.wordCloudInner) {
-                            this.$refs.wordCloudInner.innerHTML = '';
-                        }
+                        if (this.$refs.wordCloudInner) this.$refs.wordCloudInner.innerHTML = '';
                     } 
                 },
-
-                /* --- 上下拖曳改變版面大小邏輯 --- */
                 startDragH() {
                     this.isDraggingH = true;
                     document.body.style.userSelect = 'none';
@@ -647,11 +571,8 @@
                     document.body.style.cursor = '';
                     window.removeEventListener('mousemove', this.doDragH);
                     window.removeEventListener('mouseup', this.stopDragH);
-                    
                     setTimeout(() => { this.resetView(); }, 50);
                 },
-
-                /* --- 畫布滑鼠平移拖曳邏輯 --- */
                 startPan(e) {
                     if (this.viewMode !== 'teacher') return;
                     this.panning = true;
@@ -671,44 +592,32 @@
                     window.removeEventListener('mousemove', this.onPan); 
                     window.removeEventListener('mouseup', this.stopPan);
                 },
-
-                /* --- 畫布滾輪縮放邏輯 --- */
                 handleZoom(e) {
                     if (this.viewMode !== 'teacher') return;
                     const zoomSensitivity = 0.001;
                     const delta = -e.deltaY * zoomSensitivity;
                     const newScale = Math.min(Math.max(0.1, this.scale + delta), 5); 
                     const ratio = 1 - newScale / this.scale;
-                    
                     this.pointX += (e.clientX - this.pointX) * ratio;
                     this.pointY += (e.clientY - this.pointY) * ratio;
                     this.scale = newScale;
                 },
-
-                /* --- 重置視圖 (自動定位置中) --- */
                 resetView() {
                     if (this.viewMode !== 'teacher' || !this.$refs.viewport) return;
                     const wrapper = this.$refs.viewport;
-                    
                     const clientW = wrapper.clientWidth || 1200;
                     const clientH = wrapper.clientHeight || 800;
-                    
                     const scaleW = clientW / this.canvasW;
                     const scaleH = clientH / this.canvasH;
                     this.scale = Math.min(scaleW, scaleH) * 0.95; 
-                    
                     this.pointX = (clientW - this.canvasW * this.scale) / 2;
                     this.pointY = (clientH - this.canvasH * this.scale) / 2;
                 },
-
-                /* --- 文字雲生成與排版渲染 --- */
                 renderWordCloud() {
                     if (this.viewMode !== 'teacher' || !this.$refs.wordCloudInner) return;
                     const list = this.cloudDataList;
-                    
                     const inner = this.$refs.wordCloudInner;
                     inner.innerHTML = ''; 
-
                     if (list.length === 0) return; 
 
                     WordCloud(inner, {
@@ -718,8 +627,8 @@
                         backgroundColor: 'transparent',
                         rotateRatio: 0, 
                         
-                        /* 設定安全的網格密度，保證上下標籤絕對不會互相覆蓋 */
-                        gridSize: Math.round(22 * (1200 / 1024)), 
+                        /* 【防重疊關鍵微調 3】稍微拉高 gridSize 作為防撞安全距離 */
+                        gridSize: Math.round(28 * (1200 / 1024)), 
                         
                         origin: [600, 400], 
                         weightFactor: function (size) { return size; }, 
@@ -727,13 +636,10 @@
                         shrinkToFit: true,     
                         ellipticity: 0.8, 
                         shape: 'square',
-                        
                         classes: function(word) {
-                            // 去除輔助排版用的隱形空白再計算隨機 hash 顏色，確保同字同色
                             const cleanWord = word.replace(/\u00A0/g, '').trim();
                             let hash = 0;
                             for (let i = 0; i < cleanWord.length; i++) hash = cleanWord.charCodeAt(i) + ((hash << 5) - hash);
-                            
                             const colors = ['tag-blue', 'tag-green', 'tag-grey', 'tag-teal', 'tag-purple'];
                             return 'word-tag ' + colors[Math.abs(hash) % colors.length];
                         }
